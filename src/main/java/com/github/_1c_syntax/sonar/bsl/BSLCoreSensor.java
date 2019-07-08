@@ -185,6 +185,11 @@ public class BSLCoreSensor implements Sensor {
         .save();
 
       context.<Integer>newMeasure().on(inputFile)
+              .forMetric(CoreMetrics.LINES_TO_COVER)
+              .withValue(metrics.getNcloc())
+              .save();
+
+      context.<Integer>newMeasure().on(inputFile)
         .forMetric(CoreMetrics.STATEMENTS)
         .withValue(metrics.getStatements())
         .save();
