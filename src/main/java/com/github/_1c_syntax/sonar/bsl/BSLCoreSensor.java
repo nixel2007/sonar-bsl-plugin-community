@@ -47,6 +47,7 @@ import org.sonar.api.batch.rule.ActiveRules;
 import org.sonar.api.batch.sensor.Sensor;
 import org.sonar.api.batch.sensor.SensorContext;
 import org.sonar.api.batch.sensor.SensorDescriptor;
+import org.sonar.api.batch.sensor.coverage.NewCoverage;
 import org.sonar.api.batch.sensor.cpd.NewCpdTokens;
 import org.sonar.api.batch.sensor.highlighting.NewHighlighting;
 import org.sonar.api.batch.sensor.highlighting.TypeOfText;
@@ -134,6 +135,9 @@ public class BSLCoreSensor implements Sensor {
     LOGGER.info("Saving highlighting...");
     saveHighlighting();
 
+    LOGGER.info("Saving loc for coverage...");
+      saveCoverageLoc();
+
   }
 
   private void runLangServerAnalyze() {
@@ -183,11 +187,6 @@ public class BSLCoreSensor implements Sensor {
         .forMetric(CoreMetrics.NCLOC)
         .withValue(metrics.getNcloc())
         .save();
-
-      context.<Integer>newMeasure().on(inputFile)
-              .forMetric(CoreMetrics.LINES_TO_COVER)
-              .withValue(metrics.getNcloc())
-              .save();
 
       context.<Integer>newMeasure().on(inputFile)
         .forMetric(CoreMetrics.STATEMENTS)
@@ -258,6 +257,17 @@ public class BSLCoreSensor implements Sensor {
       highlighting.save();
     });
 
+  }
+
+  private void saveCoverageLoc() {
+
+    inputFilesMap.forEach((InputFile inputFile, DocumentContext documentContext) -> {
+      NewCoverage coverage = context.newCoverage().onFile(inputFile);
+
+        documentContext.getTokensFromDefaultChannel()
+          .forEach((Token token) -> coverage.lineHits( token.getLine(), 0));
+      coverage.save();
+    });
   }
 
   private LanguageServerConfiguration getLanguageServerConfiguration() {
